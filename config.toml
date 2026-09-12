@@ -1,29 +1,205 @@
-model = "gpt-5-codex"
-model_reasoning_effort = "high"
+# ============================================================
+# Codex CLI 完整配置文件 (config.toml)
+# 环境：Windows，但混入了 macOS 路径，部分条目无效
+# 敏感信息已脱敏，请自行替换 token
+# ============================================================
 
-[mcp]
+# ------------------------------------------------------------
+# 全局模型与行为设置（核心）
+# ------------------------------------------------------------
+model_provider = "custom"                # 使用自定义模型供应商
+model = "gpt-5.2"          # 实际调用的模型名称
+model_reasoning_effort = "low"           # 推理强度（max/medium/min）
+model_context_window = 200000            # 上下文窗口大小（token数）
+model_max_output_tokens = 64000          # 最大输出长度
+disable_response_storage = true          # 不存储对话记录（隐私）
+sandbox_mode = "danger-full-access"      # 允许任意系统操作（谨慎使用）
+personality = "pragmatic"                # 回答风格：务实
+
+# ------------------------------------------------------------
+# 任务结束通知（可能有误）
+# 同时包含 Windows 和 macOS 路径，同一机器不可能同时生效
+# 建议只保留当前系统的有效路径，或直接删除整行
+# ------------------------------------------------------------
+
+# ------------------------------------------------------------
+# 自定义模型供应商配置（核心，有效）
+# 通过第三方网关调用模型，注意 token 安全性
+# ------------------------------------------------------------
+notify = ["C:\\Users\\16658\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\b474a88d5d105afa\\bin\\node_modules\\@oai\\sky\\bin\\windows\\codex-computer-use.exe", "turn-ended", "--previous-notify", "[\"/Users/songsong/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient\",\"turn-ended\"]"]
+[model_providers.custom]
+name = "custom"
+wire_api = "responses"                  # 使用 responses API 格式
+requires_openai_auth = true             # 需要 Bearer Token
+base_url = "https://xxxxx"   # 网关地址
+# 以下 token 已脱敏，请自行替换为你当前有效的 token
+# 注意：此 token 已暴露，建议立即在服务商处重新生成
+experimental_bearer_token = "sk-xxxx"
+# 以下为测试用的 curl 命令，仅供参考
+
+
+
+# ------------------------------------------------------------
+# 项目信任列表（很多无效路径，建议精简）
+# 以下所有 [projects."..."] 条目均有效，但许多路径在当前 Windows 下不存在
+# 特别是所有 /Users/... 路径（macOS）在 Windows 下无效，可全部删除
+# 临时目录（如 2026-*）如不再使用也建议删除，以加快启动速度
+# ------------------------------------------------------------
+# 以下为无效的 macOS 路径（建议删除）
+[projects."/Users/songsong/Desktop/wensong.jiaoCODE/work/mindflow-manager"]
+trust_level = "trusted"
+[projects."/Users/songsong/Documents/Codex/2026-06-04/new-chat"]
+trust_level = "trusted"
+[projects."/Users/songsong"]
+trust_level = "trusted"
+
+
+# ------------------------------------------------------------
+# TUI 模型可用性新手引导（影响不大，保留无妨）
+# ------------------------------------------------------------
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+"gpt-5.6-sol" = 4
+
+[marketplaces.openai-bundled]
+source_type = "local"
+source = '\\?\C:\Users\16658\.codex\.tmp\bundled-marketplaces\openai-bundled'
+
+[marketplaces.openai-primary-runtime]
+source_type = "local"
+source = '\\?\C:\Users\16658\.cache\codex-runtimes\codex-primary-runtime\plugins\openai-primary-runtime'
+
+# ------------------------------------------------------------
+# 启用的插件列表（有效，可按需关闭）
+# ------------------------------------------------------------
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+[plugins."chrome@openai-bundled"]
+enabled = true
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+[plugins."computer-use@openai-bundled"]
+enabled = true
+[plugins."superpowers@openai-api-curated"]
+enabled = true
+[plugins."linear@openai-api-curated"]
+enabled = true
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+[plugins."visualize@openai-bundled"]
+enabled = true
+[plugins."browser@openai-bundled"]
+enabled = true
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+[plugins."unified-computer-use@openai-bundled"]
 enabled = true
 
-# --- MCP servers added by Codex CLI ---
+# ------------------------------------------------------------
+# 功能开关
+# ------------------------------------------------------------
+[features]
+js_repl = false          # 禁用 JavaScript REPL
+memories = true          # 启用记忆功能
+
+# ------------------------------------------------------------
+# 桌面客户端 UI/UX 配置（GUI 版本有效）
+# ------------------------------------------------------------
+[desktop]
+conversationDetailMode = "STEPS_COMMANDS"
+ambient-suggestions-enabled = true
+preventSleepWhileRunning = true
+git-branch-prefix = "feature-"
+git-pull-request-merge-method = "merge"
+git-commit-instructions = """
+使用中文
+bug修复采用：fix:
+新增功能：feat:"""
+appearanceTheme = "dark"
+open-local-url-in-target-preference = "external-browser"
+followUpQueueMode = "queue"
+selected-avatar-id = "custom:levi"
+avatar-overlay-mascot-width-px = 80
+
+[desktop.open-in-target-preferences]
+global = "vscode"
+
+# ------------------------------------------------------------
+# MCP 服务：Node.js REPL（有效，Computer Use 依赖）
+# ------------------------------------------------------------
+[mcp_servers.node_repl]
+args = []
+command = 'C:\Users\16658\AppData\Local\OpenAI\Codex\runtimes\cua_node\b474a88d5d105afa\bin\node_repl.exe'
+startup_timeout_sec = 120
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = 'C:\Users\16658\AppData\Local\OpenAI\Codex\runtimes\cua_node\b474a88d5d105afa\bin\node_modules'
+NODE_REPL_NODE_PATH = 'C:\Users\16658\AppData\Local\OpenAI\Codex\runtimes\cua_node\b474a88d5d105afa\bin\node.exe'
+NODE_REPL_TRUSTED_CODE_PATHS = 'C:\Users\16658\.codex;C:\Users\16658\AppData\Local\OpenAI\Codex\runtimes\cua_node\b474a88d5d105afa\bin\node_modules'
+CODEX_HOME = 'C:\Users\16658\.codex'
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+BROWSER_USE_TINYSKY_ENABLED = "1"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = ""
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = ""
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.901.51231"
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"C:/Users/16658/.codex/plugins/cache/openai-bundled/browser/26.901.51231/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
+SKY_CUA_NATIVE_PIPE = "1"
+SKY_CUA_NATIVE_PIPE_DIRECTORY = '\\.\pipe\codex-computer-use-4d2fa81c-87ec-4443-9784-c1b1052f3926'
+CODEX_CLI_PATH = 'C:\Users\16658\AppData\Local\OpenAI\Codex\bin\8e5b6932251c2c1c\codex.exe'
+
+# ------------------------------------------------------------
+# MCP 服务
+# ------------------------------------------------------------
+[mcp]
+enabled = true
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp@latest"]
-
 [mcp_servers.sequential-thinking]
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
-
 [mcp_servers.mcp-server-time]
 command = "uvx"
 args = ["mcp-server-time", "--local-timezone=Asia/Shanghai"]
-
 [mcp_servers.mcp-shrimp-task-manager]
 command = "npx"
 args = ["-y", "mcp-shrimp-task-manager"]
-env = { DATA_DIR = "/Users/ninesun/tools/mcp-shrimp-task-manager/data", TEMPLATES_USE = "zh", ENABLE_GUI = "false" }
-
+env = { DATA_DIR = "C:\\Users\\16658\\tools\\mcp-shrimp-task-manager\\data", TEMPLATES_USE = "zh", ENABLE_GUI = "false" }
 [mcp_servers.playwright]
 command = "npx"
 args = ["@playwright/mcp@latest"]
 
-# --- End MCP servers ---
+# ------------------------------------------------------------
+# 记忆相关
+# ------------------------------------------------------------
+[memories]
+generate_memories = true
+use_memories = true
+
+# ------------------------------------------------------------
+# Windows 特定沙箱策略
+# ------------------------------------------------------------
+[windows]
+sandbox = "elevated"
+
+# ------------------------------------------------------------
+# Shell 环境策略（系统生成，无需修改）
+# ------------------------------------------------------------
+[shell_environment_policy.set]
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "8676faca28eddb6424d4b54116fe8305e2da6a0ca4e5271e8758fc3c55c3b8fc"
+
+# ------------------------------------------------------------
+# 钩子信任哈希（系统生成，无需修改）
+# ------------------------------------------------------------
+[hooks.state]
+[hooks.state."browser@openai-bundled:plugin.json#hooks[0]:stop:0:0"]
+trusted_hash = "sha256:317a07045dfc95aef2e80c55428a2f817e2768be867e3b1ef29a73da8636ae7f"
+[hooks.state."chrome@openai-bundled:plugin.json#hooks[0]:stop:0:0"]
+trusted_hash = "sha256:317a07045dfc95aef2e80c55428a2f817e2768be867e3b1ef29a73da8636ae7f"
+[hooks.state."computer-use@openai-bundled:plugin.json#hooks[0]:stop:0:0"]
+trusted_hash = "sha256:317a07045dfc95aef2e80c55428a2f817e2768be867e3b1ef29a73da8636ae7f"

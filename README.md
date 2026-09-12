@@ -18,7 +18,8 @@
 ├── AGENTS.md                  # 顶层系统提示词与交互准则
 ├── config.toml                # Codex CLI 主配置，包含模型、项目、MCP 服务声明
 ├── internal_storage.json      # Codex CLI 内部持久化状态
-└── prompts/                   # 任务提示词模板集合（Markdown + YAML Front Matter）
+├── prompts/                   # [已废弃] 旧版模板，Claude Code commands 格式，Codex 不加载
+└── skills/                    # Codex 技能，每子目录一个 SKILL.md（prompts 的替代）
 ```
 
 > 建议在提交新文件前运行 `tree` 或 `ls` 确认目录层级保持清晰；若新增子目录，请同步更新本节说明。
@@ -29,12 +30,13 @@
    - 安装最新的 Codex CLI（参考官方文档）。
    - 确保本地具备 Node.js ≥ 18 与 Python ≥ 3.11，以便运行 `npx` 与 `uvx` 命令。
 2. **应用配置**
-   - 将本仓库克隆到本地，例如 `~/projects/codex-config`。
-   - 在 Codex CLI 的配置目录（默认 `~/.config/codex`）创建或更新符号链接，使其指向本仓库的 `config.toml` 与 `prompts/`。
+   - 将本仓库克隆到本地。
+   - Codex CLI 的配置目录是 `~/.codex`（Windows：`C:\Users\<你>\.codex`）。**推荐用 `link-codex` 技能一键完成**：在 Codex 里说「链接配置」、或显式调用 `$link-codex`，它会把 `config.toml`、`AGENTS.md` 建为符号链接、`skills/` 建为 junction 指向本仓库，之后改动实时生效，不必再手动复制。
+   - 手动做法：文件与目录**区别对待**——`config.toml`、`AGENTS.md` 用 `cmd /c mklink` 建符号链接（PowerShell 的 `New-Item` 在非提权会话会报权限不足）；`skills/` 用 **junction**（跨盘可用，且不需要开发者模式/管理员权限）。建链接前先备份原文件，并确认 `~/.codex` 下没有仓库缺失的内容——junction 会遮蔽目标目录里原有的文件。
    - 如需要自定义 `projects` 节点，请复制 `config.toml` 并在本地分支修改，避免直接覆盖主干。
 3. **验证安装**
    - 运行 `codex doctor` 或执行一次简单对话，确认模型、项目信任与 MCP 服务均已正确加载。
-   - 在 Codex CLI 中执行 `list prompts`（若 CLI 支持）确保自定义提示词可被发现。
+   - 技能无需注册：靠 `SKILL.md` 里的 `description` 自动触发，或显式调用 `$skill-name`。
 
 ## 配置详解
 
@@ -131,38 +133,40 @@
 
 ### 命令调用示例
 
-- `/explain "这个正则表达式：^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$"`
-- `/explain "为什么这段 Go 代码在并发下产生数据竞态？"`
-- `/debug "Docker 容器启动后立即退出，exit code 137"`
-- `/debug "K8s Pod 健康检查失败，Readiness probe 超时"`
-- `/optimize "SELECT * FROM orders WHERE user_id = ?"`
-- `/optimize "GraphQL 列表查询延迟高，如何分页与缓存？"`
-- `/db-schema "博客平台：文章、评论、标签、分类、用户关注"`
-- `/db-schema "电商：用户、商品、库存、订单、支付、退款"`
-- `/analyze "对 feature-X 的 spec.md/plan.md/tasks.md 做一致性分析"`
-- `/api-docs "订单服务 v1：列出/创建/取消订单接口，返回 JSON Schema"`
-- `/check-env "Node 18 + pnpm + Docker Desktop + Postgres 需要检查哪些项？"`
-- `/clarify "报表导出的‘增量模式’应该如何定义时间窗口？"`
-- `/commit-msg "feat: 支持多租户鉴权与组织切换"`
-- `/constitution "新增隐私数据处理原则：最小化采集、可追溯、可删除"`
-- `/deep-reflector "回顾上周生产事故的根因、缓解与长期改进项"`
-- `/gen-tests "为用户注册接口补充单测：邮箱校验、重复注册、速率限制"`
-- `/github-issue-fixer "#1234 CI 构建偶发失败：超时 60s"`
-- `/github-pr-reviewer "#5678 增加缓存层与指标打点，请给出风险与建议"`
-- `/implement "按 tasks.md 的 Core 阶段开始实现并输出变更清单"`
-- `/insight-documenter "总结搜索性能优化洞察：索引、分页、缓存、N+1"`
-- `/instruction-reflector "审查 /optimize 模板是否与 AGENTS.md 原则一致"`
-- `/kiro-assistant "整理 Kiro 看板的优先级、依赖与风险"`
-- `/kiro-feature-designer "为‘智能模板’设计 MVP 范围与验收标准"`
-- `/kiro-spec-creator "为‘知识库同步’编写规格：触发、冲突合并、安全"`
-- `/kiro-task-executor "执行 Sprint-12 的集成与验收任务"`
-- `/kiro-task-planner "将‘评论系统’拆解为 5 个可并行任务"`
-- `/prompt-creator "生成用于代码评审的团队风格化提示词"`
-- `/refactor "重构 monolith：拆分 auth、billing、report 三个模块"`
-- `/review-code "评审 PR #4321：关注并发安全、可测试性、日志"`
-- `/specify "编写‘导出报表’功能的规格：功能、非功能、边界"`
-- `/tasks "基于 spec.md 与 plan.md 生成任务清单"`
-- `/ui-engineer "设计订单列表的空态、加载态与错误态"`
+> Codex 的 skill 用 `$skill-name` 显式调用（没有 `/` 斜杠命令），或直接描述需求、靠 `SKILL.md` 的 `description` 自动触发。以下示例对应的模板需先转换为 `skills/<名>/SKILL.md` 才能被识别；目前已转换：`explain`、`debug`、`commit-msg`。
+
+- `$explain "这个正则表达式：^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$"`
+- `$explain "为什么这段 Go 代码在并发下产生数据竞态？"`
+- `$debug "Docker 容器启动后立即退出，exit code 137"`
+- `$debug "K8s Pod 健康检查失败，Readiness probe 超时"`
+- `$optimize "SELECT * FROM orders WHERE user_id = ?"`
+- `$optimize "GraphQL 列表查询延迟高，如何分页与缓存？"`
+- `$db-schema "博客平台：文章、评论、标签、分类、用户关注"`
+- `$db-schema "电商：用户、商品、库存、订单、支付、退款"`
+- `$analyze "对 feature-X 的 spec.md/plan.md/tasks.md 做一致性分析"`
+- `$api-docs "订单服务 v1：列出/创建/取消订单接口，返回 JSON Schema"`
+- `$check-env "Node 18 + pnpm + Docker Desktop + Postgres 需要检查哪些项？"`
+- `$clarify "报表导出的‘增量模式’应该如何定义时间窗口？"`
+- `$commit-msg "feat: 支持多租户鉴权与组织切换"`
+- `$constitution "新增隐私数据处理原则：最小化采集、可追溯、可删除"`
+- `$deep-reflector "回顾上周生产事故的根因、缓解与长期改进项"`
+- `$gen-tests "为用户注册接口补充单测：邮箱校验、重复注册、速率限制"`
+- `$github-issue-fixer "#1234 CI 构建偶发失败：超时 60s"`
+- `$github-pr-reviewer "#5678 增加缓存层与指标打点，请给出风险与建议"`
+- `$implement "按 tasks.md 的 Core 阶段开始实现并输出变更清单"`
+- `$insight-documenter "总结搜索性能优化洞察：索引、分页、缓存、N+1"`
+- `$instruction-reflector "审查 $optimize 模板是否与 AGENTS.md 原则一致"`
+- `$kiro-assistant "整理 Kiro 看板的优先级、依赖与风险"`
+- `$kiro-feature-designer "为‘智能模板’设计 MVP 范围与验收标准"`
+- `$kiro-spec-creator "为‘知识库同步’编写规格：触发、冲突合并、安全"`
+- `$kiro-task-executor "执行 Sprint-12 的集成与验收任务"`
+- `$kiro-task-planner "将‘评论系统’拆解为 5 个可并行任务"`
+- `$prompt-creator "生成用于代码评审的团队风格化提示词"`
+- `$refactor "重构 monolith：拆分 auth、billing、report 三个模块"`
+- `$review-code "评审 PR #4321：关注并发安全、可测试性、日志"`
+- `$specify "编写‘导出报表’功能的规格：功能、非功能、边界"`
+- `$tasks "基于 spec.md 与 plan.md 生成任务清单"`
+- `$ui-engineer "设计订单列表的空态、加载态与错误态"`
 
 ## 维护与扩展指南
 

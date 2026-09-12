@@ -1,1 +1,10 @@
 codex-settings
+config.toml
+/config
+*.toml
+/skills/xd_skills
+# Codex CLI 自己写入的系统技能目录（随版本重新生成）
+/skills/.system
+.idea/
+/skills/xd-doc
+/skills/XD-BUG/
